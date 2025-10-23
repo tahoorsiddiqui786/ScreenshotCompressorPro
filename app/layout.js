@@ -31,7 +31,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Screenshot Compressor Pro',
+  title: 'Quick Compress',
   description: 'Compress images under 201KB instantly',
 }
 

@@ -27,7 +27,7 @@ export default function Footer({ isDark }) {
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}
             >
-              Screenshot Compressor Pro helps you compress images under 201KB
+              Quick Compress helps you compress images under 201KB
               with ease. Perfect for web optimization and fast loading times.
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function Footer({ isDark }) {
             >
               <Code className="w-4 h-4" />
               <span>
-                © {currentYear} Screenshot Compressor Pro. All rights reserved.
+                © {currentYear} Quick Compress. All rights reserved.
               </span>
             </div>
           </div>
