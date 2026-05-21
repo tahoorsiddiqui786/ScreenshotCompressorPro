@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server';
 
 function firstHeaderValue(value) {
-  return value?.split(',')[0]?.trim() || 'unknown';
-}
-
-function decodeHeader(value) {
-  if (!value) return 'unknown';
-
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
+  return value?.split(',')[0]?.trim() || null;
 }
 
 function maskIp(ip) {
@@ -31,11 +21,10 @@ function maskIp(ip) {
 
 function isInternalRequest(userAgent) {
   const agent = userAgent.toLowerCase();
-
   return agent.startsWith('vercel-') || agent.includes('vercel-favicon');
 }
 
-export function middleware(request) {
+export async function middleware(request) {
   const userAgent = request.headers.get('user-agent') || 'unknown';
 
   if (isInternalRequest(userAgent)) {
@@ -43,19 +32,56 @@ export function middleware(request) {
   }
 
   const ip = firstHeaderValue(request.headers.get('x-forwarded-for'));
-  const city = decodeHeader(request.headers.get('x-vercel-ip-city'));
-  const region = decodeHeader(request.headers.get('x-vercel-ip-country-region'));
-  const country = decodeHeader(request.headers.get('x-vercel-ip-country'));
+  const path = request.nextUrl.pathname;
+  const vercelRequestId = request.headers.get('x-vercel-id') || 'unknown';
+  const time = new Date().toISOString();
+
+  // Fallback data from Vercel headers
+  let city = 'unknown';
+  let region = 'unknown';
+  let country = 'unknown';
+  let isp = 'unknown';
+  let timezone = 'unknown';
+  let lat = 'unknown';
+  let lon = 'unknown';
+
+  if (ip) {
+    try {
+      const geoRes = await fetch(
+        `http://ip-api.com/json/${ip}?fields=status,city,regionName,country,isp,timezone,lat,lon`,
+        { signal: AbortSignal.timeout(2000) } // 2 second timeout so page doesn't slow down
+      );
+
+      if (geoRes.ok) {
+        const geo = await geoRes.json();
+        if (geo.status === 'success') {
+          city = geo.city || 'unknown';
+          region = geo.regionName || 'unknown';
+          country = geo.country || 'unknown';
+          isp = geo.isp || 'unknown';
+          timezone = geo.timezone || 'unknown';
+          lat = geo.lat || 'unknown';
+          lon = geo.lon || 'unknown';
+        }
+      }
+    } catch {
+      // Silently fall back to Vercel headers if API fails
+      city = 'unknown (api timeout)';
+    }
+  }
 
   console.log('VISITOR_LOCATION', {
     city,
     region,
     country,
-    ip: maskIp(ip),
-    path: request.nextUrl.pathname,
+    isp,
+    timezone,
+    coordinates: `${lat}, ${lon}`,
+    ip: maskIp(ip || 'unknown'),
+    path,
     userAgent,
-    vercelRequestId: request.headers.get('x-vercel-id') || 'unknown',
-    time: new Date().toISOString(),
+    vercelRequestId,
+    time,
   });
 
   return NextResponse.next();
