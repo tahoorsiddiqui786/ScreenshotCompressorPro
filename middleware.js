@@ -29,7 +29,19 @@ function maskIp(ip) {
   return ip;
 }
 
+function isInternalRequest(userAgent) {
+  const agent = userAgent.toLowerCase();
+
+  return agent.startsWith('vercel-') || agent.includes('vercel-favicon');
+}
+
 export function middleware(request) {
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+
+  if (isInternalRequest(userAgent)) {
+    return NextResponse.next();
+  }
+
   const ip = firstHeaderValue(request.headers.get('x-forwarded-for'));
   const city = decodeHeader(request.headers.get('x-vercel-ip-city'));
   const region = decodeHeader(request.headers.get('x-vercel-ip-country-region'));
@@ -41,7 +53,7 @@ export function middleware(request) {
     country,
     ip: maskIp(ip),
     path: request.nextUrl.pathname,
-    userAgent: request.headers.get('user-agent') || 'unknown',
+    userAgent,
     vercelRequestId: request.headers.get('x-vercel-id') || 'unknown',
     time: new Date().toISOString(),
   });
