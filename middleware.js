@@ -36,7 +36,6 @@ export async function middleware(request) {
   const vercelRequestId = request.headers.get('x-vercel-id') || 'unknown';
   const time = new Date().toISOString();
 
-  // Fallback data from Vercel headers
   let city = 'unknown';
   let region = 'unknown';
   let country = 'unknown';
@@ -47,25 +46,25 @@ export async function middleware(request) {
 
   if (ip) {
     try {
+      // ipwho.is — free, HTTPS, no API key, works on Vercel Edge
       const geoRes = await fetch(
-        `http://ip-api.com/json/${ip}?fields=status,city,regionName,country,isp,timezone,lat,lon`,
-        { signal: AbortSignal.timeout(2000) } // 2 second timeout so page doesn't slow down
+        `https://ipwho.is/${ip}`,
+        { signal: AbortSignal.timeout(2000) }
       );
 
       if (geoRes.ok) {
         const geo = await geoRes.json();
-        if (geo.status === 'success') {
+        if (geo.success) {
           city = geo.city || 'unknown';
-          region = geo.regionName || 'unknown';
+          region = geo.region || 'unknown';
           country = geo.country || 'unknown';
-          isp = geo.isp || 'unknown';
-          timezone = geo.timezone || 'unknown';
-          lat = geo.lat || 'unknown';
-          lon = geo.lon || 'unknown';
+          isp = geo.connection?.isp || 'unknown';
+          timezone = geo.timezone?.id || 'unknown';
+          lat = geo.latitude || 'unknown';
+          lon = geo.longitude || 'unknown';
         }
       }
     } catch {
-      // Silently fall back to Vercel headers if API fails
       city = 'unknown (api timeout)';
     }
   }
