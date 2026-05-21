@@ -4,17 +4,7 @@ function firstHeaderValue(value) {
   return value?.split(',')[0]?.trim() || null;
 }
 
-function maskIp(ip) {
-  if (!ip || ip === 'unknown') return 'unknown';
-  if (ip.includes('.')) {
-    const parts = ip.split('.');
-    return parts.length === 4 ? `${parts[0]}.${parts[1]}.${parts[2]}.xxx` : ip;
-  }
-  if (ip.includes(':')) {
-    return `${ip.split(':').slice(0, 3).join(':')}:xxxx`;
-  }
-  return ip;
-}
+
 
 function isInternalRequest(userAgent) {
   const agent = userAgent.toLowerCase();
@@ -121,7 +111,7 @@ export async function middleware(request) {
     isp,
     timezone,
     coordinates: lat !== 'unknown' ? `${lat}, ${lon}` : 'unknown',
-    ip: maskIp(ip || 'unknown'),
+    ip: ip || 'unknown',
     path,
     userAgent,
     vercelRequestId,
